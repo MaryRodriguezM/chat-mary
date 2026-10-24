@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat en tiempo real</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Pantalla para elegir nombre -->
+  <div id="login" class="login">
+    <form id="login-form" class="card">
+      <h1>Chat en tiempo real</h1>
+      <label for="name-input">Elige un nombre</label>
+      <input id="name-input" maxlength="20" autocomplete="off" autofocus />
+      <button type="submit">Entrar</button>
+      <p id="login-error" class="error"></p>
+    </form>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat" class="chat hidden">
+    <aside class="sidebar">
+      <h2>Conectados (<span id="user-count">0</span>)</h2>
+      <ul id="user-list"></ul>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <span id="my-name"></span>
+        <span id="status" class="status status-connecting">Conectando…</span>
+      </header>
+
+      <div id="messages" class="messages"></div>
+      <div id="typing" class="typing"></div>
+
+      <form id="message-form" class="composer">
+        <input id="message-input" maxlength="500" autocomplete="off" placeholder="Escribe un mensaje…" disabled />
+        <button type="submit" id="send-btn" disabled>Enviar</button>
+      </form>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
