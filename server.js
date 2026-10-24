@@ -17,7 +17,7 @@ if (ALLOWED_ORIGINS.includes('*')) {
   process.exit(1);
 }
 
-const HISTORY_SIZE = 50;
+const HISTORY_SIZE = Number(process.env.MAX_HISTORY) || 50;
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_NAME_LENGTH = 20;
 const PING_INTERVAL_MS = 30000;
@@ -31,7 +31,14 @@ const history = [];
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', users: userList().length }));
+    res.end(
+      JSON.stringify({
+        ok: true,
+        conectados: userList().length,
+        mensajesEnHistorial: history.length,
+        uptimeSegundos: Math.round(process.uptime()),
+      })
+    );
     return;
   }
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -49,7 +56,7 @@ server.on('upgrade', (req, socket, head) => {
     socket.destroy();
     return;
   }
-  console.log(`[upgrade] origen=${origin}`);
+  console.log(`[upgrade] aceptado origin=${origin}`);
   wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
 });
 
@@ -85,7 +92,6 @@ function rateLimited(ws) {
 
 // ---------- Conexiones ----------
 wss.on('connection', (ws) => {
-  console.log('[conexión] un cliente se conectó');
   ws.name = null;
   ws.hits = [];
   ws.alive = true;
@@ -119,8 +125,8 @@ wss.on('connection', (ws) => {
         return send(ws, { type: 'error', text: 'Ese nombre ya está en uso' });
       }
       ws.name = name;
-      console.log('[join]', name);
       send(ws, { type: 'joined', name, users: userList(), history });
+      console.log(`[ws] conectado nombre="${name}" total=${userList().length}`);
       broadcast({ type: 'system', text: `${name} entró al chat`, ts: Date.now() });
       broadcast({ type: 'users', users: userList() });
       return;
@@ -146,6 +152,7 @@ wss.on('connection', (ws) => {
       const out = { type: 'message', name: ws.name, text, ts: Date.now() };
       history.push(out);
       if (history.length > HISTORY_SIZE) history.shift();
+      console.log(`[ws] mensaje de="${ws.name}" bytes=${Buffer.byteLength(text)}`);
       broadcast(out);
       return;
     }
@@ -157,7 +164,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', (code) => {
-    console.log(`[cierre] ${ws.name || 'cliente sin nombre'} se desconectó (código ${code})`);
+    console.log(`[cierre] nombre="${ws.name || '-'}" code=${code}`);
     if (ws.name) {
       broadcast({ type: 'system', text: `${ws.name} salió del chat`, ts: Date.now() });
       broadcast({ type: 'users', users: userList() });
@@ -171,7 +178,7 @@ wss.on('connection', (ws) => {
 const heartbeat = setInterval(() => {
   wss.clients.forEach((ws) => {
     if (!ws.alive) {
-      console.log(`[ping] ${ws.name || 'cliente sin nombre'} no respondió: se corta`);
+      console.log(`[ping] nombre="${ws.name || '-'}" no respondió: se corta`);
       return ws.terminate();
     }
     ws.alive = false;
@@ -191,6 +198,6 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
 server.listen(PORT, () => {
-  console.log(`Servidor escuchando en ws://localhost:${PORT}`);
-  console.log(`Orígenes permitidos: ${ALLOWED_ORIGINS.join(', ')}`);
+  console.log(`servidor escuchando en el puerto ${PORT}`);
+  console.log(`orígenes permitidos: ${ALLOWED_ORIGINS.join(', ')}`);
 });
