@@ -27,8 +27,13 @@ const MAX_PAYLOAD_BYTES = 4 * 1024;
 
 const history = [];
 
-// ---------- Servidor HTTP (necesario para revisar el origen) ----------
+// ---------- Servidor HTTP (health check y revisión del origen) ----------
 const server = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', users: userList().length }));
+    return;
+  }
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Servidor de chat funcionando');
 });
@@ -174,7 +179,16 @@ const heartbeat = setInterval(() => {
   });
 }, PING_INTERVAL_MS);
 
-wss.on('close', () => clearInterval(heartbeat));
+// ---------- Apagado limpio: cierra a todos con el código 1000 ----------
+function shutdown() {
+  console.log('[apagado] cerrando conexiones con código 1000');
+  clearInterval(heartbeat);
+  wss.clients.forEach((ws) => ws.close(1000, 'Servidor apagándose'));
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 3000).unref();
+}
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 server.listen(PORT, () => {
   console.log(`Servidor escuchando en ws://localhost:${PORT}`);

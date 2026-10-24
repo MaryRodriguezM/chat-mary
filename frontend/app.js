@@ -21,8 +21,8 @@
   // ---------- Estado ----------
   let ws = null;
   let username = null;
-  let joined = false;          // el servidor ya confirmó el nombre
-  let retries = 0;             // intentos de reconexión seguidos
+  let joined = false;           // el servidor ya confirmó el nombre
+  let retries = 0;              // intentos de reconexión seguidos
   let reconnectTimer = null;
   let intentionalClose = false; // true = no reconectar
   let lastTypingSent = 0;
@@ -126,7 +126,7 @@
           // falló al entrar (nombre vacío o repetido): no reconectar
           loginError.textContent = msg.text;
           intentionalClose = true;
-          ws.close();
+          ws.close(1000);
         } else if (!joined) {
           // falló el re-ingreso tras una reconexión: se cierra y se reintenta
           addSystem(msg.text);
@@ -221,7 +221,7 @@
     retries = 0;
     if (ws && ws.readyState <= 1) {
       intentionalClose = true;
-      ws.close();
+      ws.close(1000);
       intentionalClose = false;
     }
     connect();
@@ -243,6 +243,12 @@
       ws.send(JSON.stringify({ type: 'typing' }));
       lastTypingSent = now;
     }
+  });
+
+  // Al cerrar o salir de la página, nos despedimos con el código 1000 (cierre normal)
+  window.addEventListener('pagehide', () => {
+    intentionalClose = true;
+    if (ws && ws.readyState <= 1) ws.close(1000, 'El usuario salió');
   });
 
   renderStatus();
