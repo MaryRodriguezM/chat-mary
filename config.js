@@ -1,6 +1,6 @@
 // Dirección del servidor de chat.
-// En tu computador:   ws://localhost:3000
-// Ya publicado:       wss://TU-BACKEND.dominio.com   (con wss:// si la página es https://)
+// En local:        ws://localhost:3000
+// Ya desplegado:   wss://TU-BACKEND.dominio.com   (usa wss:// si el frontend es https://)
 window.CHAT_CONFIG = {
-  WS_URL: 'ws://localhost:3000',
+  WS_URL: 'wss://servidor-froned-bb1b40.kyracloud.com',
 };
