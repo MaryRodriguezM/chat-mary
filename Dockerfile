@@ -2,9 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Primero las dependencias (así Docker las reutiliza si no cambian)
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Primero las dependencias (así Docker las reutiliza si no cambian).
+# "package*.json" funciona con o sin package-lock.json.
+COPY package*.json ./
+RUN npm install --omit=dev
 
 COPY server.js ./
 
